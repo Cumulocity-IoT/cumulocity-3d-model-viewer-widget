@@ -32,7 +32,8 @@ import * as mathjs from 'mathjs';
 export class ColladaWidget implements OnInit {
   @Input() config;
 
-  private modelContainerId;
+  public modelContainerId;
+  
   private deviceId: string;
   private binaryId: string;
   private showGrid: boolean = false;

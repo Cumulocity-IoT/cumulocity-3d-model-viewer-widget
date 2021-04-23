@@ -1,7 +1,7 @@
 {
     "name": "3D Collada",
-    "contextPath": "3d-collada-widget",
-    "key": "3dcollada-widget-application-key",
+    "contextPath": "collada-widget",
+    "key": "collada-widget-application-key",
     "contentSecurityPolicy": "default-src 'self'",
     "icon": {
       "class": "fa fa-puzzle-piece"

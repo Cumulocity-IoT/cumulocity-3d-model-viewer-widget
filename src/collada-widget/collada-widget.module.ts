@@ -18,7 +18,7 @@ import { HttpClientModule } from '@angular/common/http';
       {
         id: 'com.softwareag.globalpresales.colladawidget',
         label: '3D Collada',
-        description: 'This widget shows the latest measurement value and unit received from a device as a KPI. It compares this measurement value with the average of measurements received in the selected interval and calculated the percentage growth or fall. It allows to configure threshold values to change the KPI color when threshold values are reached. It also shows a trend chart by plotting all the measurement values received for the selected interval or measurements count.',
+        description: 'This is a 3D Collada Widget for Cumulocity IoT.',
         component: ColladaWidget,
         configComponent: ColladaWidgetConfig,
         previewImage: require("~assets/img-preview.png")

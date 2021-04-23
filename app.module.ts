@@ -13,8 +13,8 @@ import { AssetsNavigatorModule } from '@c8y/ngx-components/assets-navigator';
 import { CockpitDashboardModule } from '@c8y/ngx-components/context-dashboard';
 import { ReportsModule } from '@c8y/ngx-components/reports';
 import { SensorPhoneModule } from '@c8y/ngx-components/sensor-phone';
-import { ColladaWidget } from './src/3d-collada-widget/collada-widget.component';
-import { ColladaWidgetConfig } from './src/3d-collada-widget/collada-widget-config.component';
+import { ColladaWidget } from './src/collada-widget/collada-widget.component';
+import { ColladaWidgetConfig } from './src/collada-widget/collada-widget-config.component';
 
 @NgModule({
   imports: [
@@ -38,7 +38,7 @@ import { ColladaWidgetConfig } from './src/3d-collada-widget/collada-widget-conf
       {
         id: 'com.softwareag.globalpresales.colladawidget',
         label: '3D Collada',
-        description: 'This widget shows the current measurement and how its value is in respect to the average value of the measurements for a selection interval. It also shows all the measurements in realtime in the chart.',
+        description: 'This is a 3D Collada Widget for Cumulocity IoT.',
         component: ColladaWidget,
         configComponent: ColladaWidgetConfig,
         previewImage: require("./assets/img-preview.png")

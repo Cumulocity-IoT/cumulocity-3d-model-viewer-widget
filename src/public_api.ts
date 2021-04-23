@@ -1,3 +1,3 @@
 /* Add your widget's module(s) here */
 
-export { ColladaWidgetAppModule } from "./3d-collada-widget/collada-widget.module";
+export { ColladaWidgetAppModule } from "./collada-widget/collada-widget.module";
