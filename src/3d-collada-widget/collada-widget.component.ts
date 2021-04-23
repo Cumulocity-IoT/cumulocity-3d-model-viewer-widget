@@ -16,15 +16,13 @@
 * limitations under the License.
 */
 
-import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
-import { FetchClient, InventoryBinaryService, Realtime } from '@c8y/ngx-components/api';
-import { IFetchOptions, IFetchResponse } from '@c8y/client/lib/src/core';
+import { Component, Input, OnInit } from '@angular/core';
+import { FetchClient, Realtime } from '@c8y/ngx-components/api';
+import { IFetchOptions } from '@c8y/client/lib/src/core';
 import * as _ from 'lodash';
 import * as THREE from 'three';
 import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
 import * as mathjs from 'mathjs';
-
-const streamToBlob = require('stream-to-blob')
 
 @Component({
   selector: 'collada-widget',
@@ -34,10 +32,12 @@ const streamToBlob = require('stream-to-blob')
 export class ColladaWidget implements OnInit {
   @Input() config;
 
+  private modelContainerId;
   private deviceId: string;
   private binaryId: string;
+  private showGrid: boolean = false;
   private backgroundColor;
-  private cameraOrbitSpeed;
+  private cameraOrbitSpeed = 0;
 
   private mathScope = {};
 
@@ -50,7 +50,8 @@ export class ColladaWidget implements OnInit {
   private kinematics;
 
   // constructor()
-  constructor(private inventoryBinaryService: InventoryBinaryService, private fetchClient: FetchClient, private realtimeService: Realtime) {
+  constructor(private fetchClient: FetchClient, private realtimeService: Realtime) {
+    this.modelContainerId = 'model-container-'+Date.now();
   }
   
   // ngOnInit()
@@ -58,36 +59,40 @@ export class ColladaWidget implements OnInit {
     try {
       if(_.has(this.config, 'customwidgetdata')) {
         // Device ID
-        this.config.device.id = '59930';
         if(_.has(this.config, 'device.id') && this.config.device.id !== undefined && this.config.device.id !== null && this.config.device.id !== '') {
           this.deviceId = this.config.device.id;
-          console.log("Device ID: "+this.deviceId);
         } else {
-          throw new Error("Device ID is blank.");
+          this.deviceId = '';
+          console.log("Device ID is blank.");
         }
         // Binary ID
-        this.config.customwidgetdata.binaryId = '1182';
         if(_.has(this.config, 'customwidgetdata.binaryId') && this.config.customwidgetdata.binaryId !== undefined && this.config.customwidgetdata.binaryId !== null && this.config.customwidgetdata.binaryId !== '') {
           this.binaryId = this.config.customwidgetdata.binaryId;
-          console.log("Binary ID: "+this.binaryId);
         } else {
           throw new Error("Binary ID is blank.");
         }
         // Background Color
         if(_.has(this.config, 'customwidgetdata.advanced.backgroundColor') && this.config.customwidgetdata.advanced.backgroundColor !== undefined && this.config.customwidgetdata.advanced.backgroundColor !== undefined !== null && this.config.customwidgetdata.advanced.backgroundColor !== '') {
           this.backgroundColor = this.config.customwidgetdata.advanced.backgroundColor;
-          console.log("Background color: "+this.config.customwidgetdata.advanced.backgroundColor+ " "+ this.backgroundColor);
         } else {
-          console.log("Background color is not selected. Setting it to default color 0x00e100.");
-          this.backgroundColor = 0x00e100;
+          console.log("Background color is not selected. Setting it to default color #6d82a3.");
+          this.backgroundColor = '#6d82a3';
         }
-        
-        // Variables
-        for(let i=0; i<this.config.customwidgetdata.variables.length; i++) {
-          if(this.config.customwidgetdata.variables[i].target === 'none') {
-            this.mathScope[this.config.customwidgetdata.variables[i].name] = this.config.customwidgetdata.variables[i].value;
+        // Show Grid
+        if(_.has(this.config, 'customwidgetdata.advanced.showGrid') && this.config.customwidgetdata.advanced.showGrid !== undefined && this.config.customwidgetdata.advanced.showGrid !== null && this.config.customwidgetdata.advanced.showGrid === 'true') {
+          this.showGrid = true;
+        } else {
+          this.showGrid = false;
+        }
+        // Variables with Target = None
+        if(_.has(this.config, 'customwidgetdata.variables')) {
+          for(let i=0; i<this.config.customwidgetdata.variables.length; i++) {
+            if(this.config.customwidgetdata.variables[i].target === 'none') {
+              this.mathScope[this.config.customwidgetdata.variables[i].name] = this.config.customwidgetdata.variables[i].value;
+            }
           }
         }
+        
         //Get the model binary from inventory
         const options: IFetchOptions = {
           method: 'GET'
@@ -95,7 +100,7 @@ export class ColladaWidget implements OnInit {
         let res = this.fetchClient.fetch('/inventory/binaries/'+this.binaryId, options);
         res.then((data) => {
           data.text().then((modelData) => {
-            this.loadModel(this.binaryId, modelData);
+            this.loadModel(modelData);
           })
         });
       } else {
@@ -106,32 +111,33 @@ export class ColladaWidget implements OnInit {
     }
   }
 
-  private async loadModel(binaryId: string, body: string) {
+  private async loadModel(body: string) {
 
     const loader = new ColladaLoader();
     let modelUrl = URL.createObjectURL(new Blob([body]));
-    let modelContainer: HTMLElement = document.getElementById("model-container");
+    let modelContainer: HTMLElement = document.getElementById(this.modelContainerId);
 
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
-    this.camera = new THREE.PerspectiveCamera( 50, modelContainer.clientWidth/modelContainer.clientHeight, 5, 200 );
+    this.camera = new THREE.PerspectiveCamera( 45, modelContainer.clientWidth/modelContainer.clientHeight, 1, 2000 );
 
     // Grid
-    var grid = new THREE.GridHelper(20, 20);
+    let grid = new THREE.GridHelper(20, 20);
     this.scene.add(grid);
+    grid.visible = this.showGrid;
 
-    /*var particleLight = new THREE.Mesh(
-        new THREE.SphereBufferGeometry(4, 2, 8),
+    let particleLight = new THREE.Mesh(
+        new THREE.SphereBufferGeometry(4, 8, 8),
         new THREE.MeshBasicMaterial({ color: 0xffffff })
     );
     this.scene.add(particleLight);
-    particleLight.position.set(0, 4000, 3009);*/
+    particleLight.position.set(0, 4000, 3009);
     
     // Lights
-    /*var light = new THREE.HemisphereLight(0xffeeee, 0x111122);
+    let light = new THREE.HemisphereLight(0xffeeee, 0x111122);
     this.scene.add(light);
-    var pointLight = new THREE.PointLight(0xffffff, 0.3);
-    particleLight.add(pointLight);*/
+    let pointLight = new THREE.PointLight(0xffffff, 0.3);
+    particleLight.add(pointLight);
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -139,7 +145,6 @@ export class ColladaWidget implements OnInit {
     this.renderer.setSize( modelContainer.clientWidth, modelContainer.clientHeight );
     this.renderer.setClearColor(new THREE.Color(this.backgroundColor), 1);
     modelContainer.appendChild(this.renderer.domElement);
-
     let me = this;
     loader.load(modelUrl, function(collada) {
       const modelScene = collada.scene;
@@ -168,14 +173,15 @@ export class ColladaWidget implements OnInit {
       
       me.kinematics = collada.kinematics;
     });
-  
     this.animate();
 
-    // Subscribe to realtime measurments
-    this.realtimeService.subscribe('/measurements/'+this.deviceId, (data) => {
-      this.setMathScope(data.data.data);
-      this.evaluateProperties();
-    });
+    if(this.deviceId !== '') {
+      // Subscribe to realtime measurments
+      this.realtimeService.subscribe('/measurements/'+this.deviceId, (data) => {
+        this.setMathScope(data.data.data);
+        this.evaluateProperties();
+      });
+    }
   }
 
   private animate(): void {
@@ -203,19 +209,23 @@ export class ColladaWidget implements OnInit {
   }
 
   private setMathScope(newMeasurement: any): void {
-    for(let i=0; i<this.config.customwidgetdata.variables.length; i++) {
-      if(this.config.customwidgetdata.variables[i].target === 'device') {
-        if(_.has(newMeasurement, this.config.customwidgetdata.variables[i].value)) {
-          let measurementValue = this.config.customwidgetdata.variables[i].value.split('.');
-          this.mathScope[this.config.customwidgetdata.variables[i].name] = newMeasurement[measurementValue[0]][measurementValue[1]].value;
+    if(_.has(this.config, 'customwidgetdata.variables')) {
+      for(let i=0; i<this.config.customwidgetdata.variables.length; i++) {
+        if(this.config.customwidgetdata.variables[i].target === 'device') {
+          if(_.has(newMeasurement, this.config.customwidgetdata.variables[i].value)) {
+            let measurementValue = this.config.customwidgetdata.variables[i].value.split('.');
+            this.mathScope[this.config.customwidgetdata.variables[i].name] = newMeasurement[measurementValue[0]][measurementValue[1]].value;
+          }
         }
       }
     }
   }
 
   private evaluateProperties(): void {
-    for(let i=0; i<this.config.customwidgetdata.properties.length; i++) {
-      this.repositionModel(this.config.customwidgetdata.properties[i].name, this.config.customwidgetdata.properties[i].expression);
+    if(_.has(this.config, 'customwidgetdata.properties')) {
+      for(let i=0; i<this.config.customwidgetdata.properties.length; i++) {
+        this.repositionModel(this.config.customwidgetdata.properties[i].name, this.config.customwidgetdata.properties[i].expression);
+      }
     }
   }
 

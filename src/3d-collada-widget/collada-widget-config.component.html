@@ -3,7 +3,9 @@
 
     <!-- Model File -->
     <label for="model-file" translate>3D Collada File (*.DAE)</label>
+    <input type="text" class="form-control" [(ngModel)]="widgetInfo.binaryName" readonly />
     <input type="file" class="form-control" name="model-file" (change)="uploadModelFile($event.target.files)" accept=".dae,model/vnd.collada+xml" />
+    <div>{{modelFileUploadMessage}}</div>
 
     <!-- Separator -->
     <div class="separator"></div>
@@ -102,32 +104,22 @@
     <!-- Separator -->
     <div class="separator"></div>
 
-    <!-- Background Color -->
-    <label for="background-color" translate>Background Color</label>
-    <input type="text" class="form-control" name="background-color" [(ngModel)]="widgetInfo.advanced.backgroundColor" (change)="updateConfig()" />
-
-    <!-- Separator -->
-    <div class="separator"></div>
-
-    <!-- Show Grid -->
-    <label for="show-grid" translate>
-        Show Grid
-    </label>
-    <select class="form-control" name="show-grid" [(ngModel)]="widgetInfo.advanced.showGrid" (change)="updateConfig()">
-        <option value = "false" [selected]="widgetInfo.advanced.showGrid === 'false'">No</option>
-        <option value = "true" [selected]="widgetInfo.advanced.showGrid === 'true'">Yes</option>
-    </select>
-
-    <!-- Separator -->
-    <div class="separator"></div>
-
-    <!-- Show Stats -->
-    <label for="show-grid" translate>
-        Show Stats
-    </label>
-    <select class="form-control" name="show-stats" [(ngModel)]="widgetInfo.advanced.showStats" (change)="updateConfig()">
-        <option value = "false" [selected]="widgetInfo.advanced.showStats === 'false'">No</option>
-        <option value = "true" [selected]="widgetInfo.advanced.showStats === 'true'">Yes</option>
-    </select>
+    <div class="row">
+        <div class="col-lg-6">
+            <!-- Background Color -->
+            <label for="background-color" translate>Background Color</label>
+            <input type="text" class="form-control" name="background-color" [(ngModel)]="widgetInfo.advanced.backgroundColor" (change)="updateConfig()" />
+        </div>
+        <div class="col-lg-6">
+            <!-- Show Grid -->
+            <label for="show-grid" translate>
+                Show Grid
+            </label>
+            <select class="form-control" name="show-grid" [(ngModel)]="widgetInfo.advanced.showGrid" (change)="updateConfig()">
+                <option value = "false" [selected]="widgetInfo.advanced.showGrid === 'false'">No</option>
+                <option value = "true" [selected]="widgetInfo.advanced.showGrid === 'true'">Yes</option>
+            </select>
+        </div>
+    </div>
 
 </c8y-form-group>

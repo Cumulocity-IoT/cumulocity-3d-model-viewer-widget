@@ -16,7 +16,6 @@
 * limitations under the License.
  */
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, Input, OnInit } from '@angular/core';
 import { IResult, IFetchOptions } from '@c8y/client/lib/src/core';
 import { IManagedObjectBinary } from '@c8y/client/lib/src/inventory';
@@ -33,6 +32,7 @@ export class ColladaWidgetConfig implements OnInit {
   @Input() config: any = {};
 
   modelFile: File = null;
+  modelFileUploadMessage: string;
   private measurementSeriesLoaded: boolean = false;
   public measurementSeries = [];
   public variableTargets = [
@@ -48,10 +48,10 @@ export class ColladaWidgetConfig implements OnInit {
 
   widgetInfo = {
     binaryId: '',
+    binaryName: '',
     advanced: {
-      backgroundColor: '',
-      showGrid: '',
-      showStats: ''
+      backgroundColor: '#6d82a3',
+      showGrid: 'true'
     },
     variables: [
       {
@@ -139,40 +139,48 @@ export class ColladaWidgetConfig implements OnInit {
     }
   ];
     
-  constructor(private http: HttpClient, private inventoryBinaryService: InventoryBinaryService, private fetchClient: FetchClient) {}
+  constructor(private inventoryBinaryService: InventoryBinaryService, private fetchClient: FetchClient) {}
 
   async ngOnInit() {
-    // Editing an existing widget
-    if(_.has(this.config, 'customwidgetdata')) {
-      this.widgetInfo = _.get(this.config, 'customwidgetdata');
-      if(_.has(this.config, 'device.id') && this.config.device.id !== undefined && this.config.device.id !== null && this.config.device.id !== '') {
-        this.loadMeasurementSeries();
-      } else {
-        console.log("Device is not selected. Select a device.");
+    try {
+      // Editing an existing widget
+      if(_.has(this.config, 'customwidgetdata')) {
+        this.widgetInfo = _.get(this.config, 'customwidgetdata');
+        if(_.has(this.config, 'device.id') && this.config.device.id !== undefined && this.config.device.id !== null && this.config.device.id !== '') {
+          this.loadMeasurementSeries();
+        } else {
+          console.log("Device is not selected. Select a device.");
+        }
+        if(_.has(this.widgetInfo, 'binaryId') && this.widgetInfo.binaryId !== undefined && this.widgetInfo.binaryId !== null && this.widgetInfo.binaryId !== '') {
+          this.loadInfoFromModel();
+        } else {
+          console.log("Binary ID is blank. Upload model file.");
+        }
+      } else { // Adding a new widget
+        _.set(this.config, 'customwidgetdata', this.widgetInfo);
       }
-      if(_.has(this.widgetInfo, 'binaryId') && this.widgetInfo.binaryId !== undefined && this.widgetInfo.binaryId !== null && this.widgetInfo.binaryId !== '') {
-        this.loadInfoFromModel();
-      } else {
-        console.log("Binary ID is blank. Upload model file.");
-      }
-    } else { // Adding a new widget
-      _.set(this.config, 'customwidgetdata', this.widgetInfo);
+    } catch(e) {
+      console.log("Exception: "+e);
     }
+    
   }
 
   public uploadModelFile(files: FileList) {
     if(files === undefined || files === null || files.length < 1) {
       console.log("No file selected.");
     } else {
+      this.modelFileUploadMessage = 'Uploading...';
       this.modelFile = files.item(0);
       let modelBinaryResponse: Promise<IResult<IManagedObjectBinary>> = this.inventoryBinaryService.create(this.modelFile);
       modelBinaryResponse.then((data) => {
         if(data.res.status === 201) {
           this.widgetInfo.binaryId = data.data.id;
-          console.log("Model is uploaded: "+this.widgetInfo.binaryId);
+          this.widgetInfo.binaryName = this.modelFile.name;
+          this.modelFileUploadMessage = 'Upload success!';
           this.updateConfig();
           this.loadInfoFromModel();
         } else {
+          this.modelFileUploadMessage = 'Upload failed!';
           console.log("Model cannot be uploaded: "+data.res.status);
         }
       });
@@ -195,7 +203,6 @@ export class ColladaWidgetConfig implements OnInit {
               me.measurementSeries.push(ss);
             });
             me.measurementSeriesLoaded = true;
-            console.log("Measurement series loaded: "+JSON.stringify(me.measurementSeries));
           });
         });
       } else {
