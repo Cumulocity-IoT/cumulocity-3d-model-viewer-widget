@@ -15,6 +15,9 @@ import { ReportsModule } from '@c8y/ngx-components/reports';
 import { SensorPhoneModule } from '@c8y/ngx-components/sensor-phone';
 import { ColladaWidget } from './src/collada-widget/collada-widget.component';
 import { ColladaWidgetConfig } from './src/collada-widget/collada-widget-config.component';
+import { ColorPaletteComponent } from './src/collada-widget/color-picker/color-palette/color-palette-component';
+import { ColorSliderComponent } from './src/collada-widget/color-picker/color-slider/color-slider-component';
+import { ColorPickerComponent } from './src/collada-widget/color-picker/color-picker-component';
 
 @NgModule({
   imports: [
@@ -29,7 +32,7 @@ import { ColladaWidgetConfig } from './src/collada-widget/collada-widget-config.
     SensorPhoneModule,
     UpgradeModule
   ],
-  declarations: [ColladaWidget, ColladaWidgetConfig],
+  declarations: [ColladaWidget, ColladaWidgetConfig, ColorPickerComponent, ColorSliderComponent, ColorPaletteComponent],
   entryComponents: [ColladaWidget, ColladaWidgetConfig],
   providers: [{
     provide: HOOK_COMPONENTS,
@@ -38,7 +41,7 @@ import { ColladaWidgetConfig } from './src/collada-widget/collada-widget-config.
       {
         id: 'com.softwareag.globalpresales.colladawidget',
         label: '3D Collada',
-        description: 'This is a 3D Collada Widget for Cumulocity IoT.',
+        description: 'A runtime widget to view a 3d collada model (*.dae) in Cumulocity IoT. It has been developed by Global Presales team.',
         component: ColladaWidget,
         configComponent: ColladaWidgetConfig,
         previewImage: require("./assets/img-preview.png")

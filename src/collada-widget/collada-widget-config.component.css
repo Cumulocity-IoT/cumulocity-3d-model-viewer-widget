@@ -6,3 +6,11 @@ td, th {
 div.separator {
     height: 20px;
 }
+
+.showColorPicker {
+    display: block;
+}
+
+.hideColorPicker {
+    display: none;
+}

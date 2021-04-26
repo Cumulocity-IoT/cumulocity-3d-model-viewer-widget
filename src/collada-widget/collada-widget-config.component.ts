@@ -31,6 +31,8 @@ import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
 export class ColladaWidgetConfig implements OnInit {
   @Input() config: any = {};
 
+  backgroundColorPickerClosed : boolean = true;
+
   modelFile: File = null;
   modelFileUploadMessage: string;
   private measurementSeriesLoaded: boolean = false;
@@ -279,6 +281,20 @@ export class ColladaWidgetConfig implements OnInit {
 
   public updateConfig() {
     _.set(this.config, 'customwidgetdata', this.widgetInfo);
+  }
+
+  setSelectedColorForBackground(value: string) {
+    value = value.substring(0,7);
+    this.widgetInfo.advanced.backgroundColor = value;
+    this.updateConfig();
+  }
+
+  closeBackgroundColorPicker() {
+    this.backgroundColorPickerClosed = true;
+  }
+
+  openBackgroundColorPicker() {
+    this.backgroundColorPickerClosed = false;
   }
 
 }
