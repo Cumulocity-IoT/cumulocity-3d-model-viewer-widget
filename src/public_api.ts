@@ -1,3 +1,3 @@
 /* Add your widget's module(s) here */
 
-export { ColladaWidgetAppModule } from "./collada-widget/collada-widget.module";
+export { ModelViewerWidgetAppModule } from "./model-viewer-widget/model-viewer-widget.module";

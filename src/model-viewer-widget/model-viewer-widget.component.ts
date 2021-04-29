@@ -25,11 +25,11 @@ import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
 import * as mathjs from 'mathjs';
 
 @Component({
-  selector: 'collada-widget',
-  templateUrl: './collada-widget.component.html',
+  selector: 'model-viewer-widget',
+  templateUrl: './model-viewer-widget.component.html',
   styles: []
 })
-export class ColladaWidget implements OnInit {
+export class ModelViewerWidget implements OnInit {
   @Input() config;
 
   public modelContainerId;

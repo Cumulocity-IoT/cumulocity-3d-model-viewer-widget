@@ -24,11 +24,11 @@ import * as _ from 'lodash';
 import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
 
 @Component({
-  selector: 'collada-widget-config',
-  templateUrl: './collada-widget-config.component.html',
-  styleUrls: ['./collada-widget-config.component.css']
+  selector: 'model-viewer-widget-config',
+  templateUrl: './model-viewer-widget-config.component.html',
+  styleUrls: ['./model-viewer-widget-config.component.css']
 })
-export class ColladaWidgetConfig implements OnInit {
+export class ModelViewerWidgetConfig implements OnInit {
   @Input() config: any = {};
 
   backgroundColorPickerClosed : boolean = true;
