@@ -50,6 +50,8 @@ export class ModelViewerWidget implements OnInit {
   private group;
   private kinematics;
 
+  private hasDeviceMeasurements: boolean = false;
+
   // constructor()
   constructor(private fetchClient: FetchClient, private realtimeService: Realtime) {
     this.modelContainerId = 'model-container-'+Date.now();
@@ -90,6 +92,8 @@ export class ModelViewerWidget implements OnInit {
           for(let i=0; i<this.config.customwidgetdata.variables.length; i++) {
             if(this.config.customwidgetdata.variables[i].target === 'none') {
               this.mathScope[this.config.customwidgetdata.variables[i].name] = this.config.customwidgetdata.variables[i].value;
+            } else {
+              this.hasDeviceMeasurements = true;
             }
           }
         }
@@ -148,6 +152,7 @@ export class ModelViewerWidget implements OnInit {
     modelContainer.appendChild(this.renderer.domElement);
     let me = this;
     loader.load(modelUrl, function(collada) {
+      
       const modelScene = collada.scene;
       me.group = new THREE.Group();
       me.group.add(modelScene);
@@ -171,18 +176,24 @@ export class ModelViewerWidget implements OnInit {
         this.mixer.clipAction(animations[0]).play();
       }
       me.scene.add(me.group);
-      
+
       me.kinematics = collada.kinematics;
+      
+      if(me.deviceId !== '') {
+
+        // only evaluates before subscriptions if there are no device measurements specific variables are defined
+        if(!me.hasDeviceMeasurements) {
+          me.evaluateProperties();
+        }
+        
+        // Subscribe to realtime measurments
+        me.realtimeService.subscribe('/measurements/'+me.deviceId, (data) => {
+          me.setMathScope(data.data.data);
+          me.evaluateProperties();
+        });
+      }
     });
     this.animate();
-
-    if(this.deviceId !== '') {
-      // Subscribe to realtime measurments
-      this.realtimeService.subscribe('/measurements/'+this.deviceId, (data) => {
-        this.setMathScope(data.data.data);
-        this.evaluateProperties();
-      });
-    }
   }
 
   private animate(): void {

@@ -17,6 +17,7 @@
  */
 
 import { Component, Input, OnInit } from '@angular/core';
+import { jsonpFactory } from '@angular/http/src/http_module';
 import { IResult, IFetchOptions } from '@c8y/client/lib/src/core';
 import { IManagedObjectBinary } from '@c8y/client/lib/src/inventory';
 import { FetchClient, InventoryBinaryService } from '@c8y/ngx-components/api';
