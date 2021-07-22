@@ -17,12 +17,6 @@ This is a runtime widget to view a 3D collada model (*.dae) in Cumulocity IoT.
 4. Click `more...`.
 5. Select `Install Widget` and follow the instructions.
 
-### Deployment - as part of the Cumulocity IoT Cockpit application
-1. Clone the repository on your local machine using `git clone https://github.com/SoftwareAG/cumulocity-3d-model-viewer-widget.git`.
-2. Run `npm install` to install the module dependencies.
-3. Run `c8ycli build` to build the cockpit application.
-4. Run `c8ycli deploy` and follow the instructions to deploy the cockpit application on your tenant. This will include the widget also.
-
 ### Configuration - to view the 3d collada model in the widget
 1. Make sure you have successfully installed or deployed the widget.
 2. Click on `Add widget`.
