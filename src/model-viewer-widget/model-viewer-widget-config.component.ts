@@ -17,7 +17,6 @@
  */
 
 import { Component, Input, OnInit } from '@angular/core';
-import { jsonpFactory } from '@angular/http/src/http_module';
 import { IResult, IFetchOptions } from '@c8y/client/lib/src/core';
 import { IManagedObjectBinary } from '@c8y/client/lib/src/inventory';
 import { FetchClient, InventoryBinaryService } from '@c8y/ngx-components/api';
@@ -36,7 +35,6 @@ export class ModelViewerWidgetConfig implements OnInit {
 
   modelFile: File = null;
   modelFileUploadMessage: string;
-  private measurementSeriesLoaded: boolean = false;
   public measurementSeries = [];
   public variableTargets = [
     {
@@ -52,6 +50,7 @@ export class ModelViewerWidgetConfig implements OnInit {
   widgetInfo = {
     binaryId: '',
     binaryName: '',
+    modelType: '',
     advanced: {
       backgroundColor: '#6d82a3',
       showGrid: 'true'
@@ -152,25 +151,25 @@ export class ModelViewerWidgetConfig implements OnInit {
         if(_.has(this.config, 'device.id') && this.config.device.id !== undefined && this.config.device.id !== null && this.config.device.id !== '') {
           this.loadMeasurementSeries();
         } else {
-          console.log("Device is not selected. Select a device.");
+          console.log("3D Model Viewer Widget - Device is not selected. Select a device.");
         }
         if(_.has(this.widgetInfo, 'binaryId') && this.widgetInfo.binaryId !== undefined && this.widgetInfo.binaryId !== null && this.widgetInfo.binaryId !== '') {
           this.loadInfoFromModel();
         } else {
-          console.log("Binary ID is blank. Upload model file.");
+          console.log("3D Model Viewer Widget - Binary ID is blank. Upload model file.");
         }
       } else { // Adding a new widget
         _.set(this.config, 'customwidgetdata', this.widgetInfo);
       }
     } catch(e) {
-      console.log("Exception: "+e);
+      console.log("3D Model Viewer Widget - Exception: "+e);
     }
     
   }
 
   public uploadModelFile(files: FileList) {
     if(files === undefined || files === null || files.length < 1) {
-      console.log("No file selected.");
+      console.log("3D Model Viewer Widget - No file selected.");
     } else {
       this.modelFileUploadMessage = 'Uploading...';
       this.modelFile = files.item(0);
@@ -179,12 +178,13 @@ export class ModelViewerWidgetConfig implements OnInit {
         if(data.res.status === 201) {
           this.widgetInfo.binaryId = data.data.id;
           this.widgetInfo.binaryName = this.modelFile.name;
+          this.widgetInfo.modelType = this.widgetInfo.binaryName.substring(this.widgetInfo.binaryName.lastIndexOf(".")).toLowerCase();
           this.modelFileUploadMessage = 'Upload success!';
           this.updateConfig();
           this.loadInfoFromModel();
         } else {
           this.modelFileUploadMessage = 'Upload failed!';
-          console.log("Model cannot be uploaded: "+data.res.status);
+          console.log("3D Model Viewer Widget - Model cannot be uploaded: "+data.res.status);
         }
       });
     }
@@ -192,61 +192,59 @@ export class ModelViewerWidgetConfig implements OnInit {
 
   public loadMeasurementSeries() {
     if(!_.has(this.config, 'device.id') || this.config.device.id === undefined || this.config.device.id === "") {
-      console.log("Device is not selected.");
+      console.log("3D Model Viewer Widget - Device is not selected.");
     } else {
-      if(!this.measurementSeriesLoaded) {
-        const options: IFetchOptions = {
-          method: 'GET'
-        };
-        let supportedSeriesResponse = this.fetchClient.fetch('/inventory/managedObjects/'+this.config.device.id+'/supportedSeries', options);
-        let me = this;
-        supportedSeriesResponse.then((data) => {
-          data.json().then((res: any) => {
-            res.c8y_SupportedSeries.forEach((ss) => {
-              me.measurementSeries.push(ss);
-            });
-            me.measurementSeriesLoaded = true;
+      this.measurementSeries = [];
+      const options: IFetchOptions = {
+        method: 'GET'
+      };
+      let supportedSeriesResponse = this.fetchClient.fetch('/inventory/managedObjects/'+this.config.device.id+'/supportedSeries', options);
+      let me = this;
+      supportedSeriesResponse.then((data) => {
+        data.json().then((res: any) => {
+          res.c8y_SupportedSeries.forEach((ss) => {
+            me.measurementSeries.push(ss);
           });
         });
-      } else {
-        console.log("Measurement series already loaded: "+JSON.stringify(this.measurementSeries));
-      }
+      });
     }
   }
 
   private loadInfoFromModel() {
-    const options: IFetchOptions = {
-      method: 'GET'
-    };
-    let res = this.fetchClient.fetch('/inventory/binaries/'+this.widgetInfo.binaryId, options);
-    res.then((data) => {
-      data.text().then((modelData) => {
-        const loader = new ColladaLoader();
-        let modelUrl = URL.createObjectURL(new Blob([modelData]));
-        const me = this;
-        loader.load(modelUrl, function(collada) {
-          if(collada.kinematics && collada.kinematics.joints) {
-            const keys = Object.keys(collada.kinematics.joints);
-            let kinematics = {
-              type: 'Kinematics',
-              values: []
-            }
-            keys.forEach(k => {
-              const joint = collada.kinematics.joints[k];
-              if(!joint.static) {
-                kinematics.values.push({
-                  name: k,
-                  min: joint.limits.min,
-                  max: joint.limits.max,
-                  defaultValue: joint.zeroPosition
-                });
+    if(this.widgetInfo.modelType === ".dae") {
+      const options: IFetchOptions = {
+        method: 'GET'
+      };
+      let res = this.fetchClient.fetch('/inventory/binaries/'+this.widgetInfo.binaryId, options);
+      res.then((data) => {
+        data.text().then((modelData) => {
+          const loader = new ColladaLoader();
+          let modelUrl = URL.createObjectURL(new Blob([modelData]));
+          const me = this;
+          loader.load(modelUrl, function(collada) {
+            if(collada.kinematics && collada.kinematics.joints) {
+              const keys = Object.keys(collada.kinematics.joints);
+              let kinematics = {
+                type: 'Kinematics',
+                values: []
               }
-            })
-            me.modelProperties.push(kinematics);
-          }
-        });
-      })
-    });
+              keys.forEach(k => {
+                const joint = collada.kinematics.joints[k];
+                if(!joint.static) {
+                  kinematics.values.push({
+                    name: k,
+                    min: joint.limits.min,
+                    max: joint.limits.max,
+                    defaultValue: joint.zeroPosition
+                  });
+                }
+              })
+              me.modelProperties.push(kinematics);
+            }
+          });
+        })
+      });
+    }
   }
 
   public addVariable(): void {

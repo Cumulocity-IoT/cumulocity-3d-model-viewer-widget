@@ -16,12 +16,13 @@
 * limitations under the License.
 */
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { FetchClient, Realtime } from '@c8y/ngx-components/api';
 import { IFetchOptions } from '@c8y/client/lib/src/core';
 import * as _ from 'lodash';
 import * as THREE from 'three';
 import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import * as mathjs from 'mathjs';
 
 @Component({
@@ -29,13 +30,14 @@ import * as mathjs from 'mathjs';
   templateUrl: './model-viewer-widget.component.html',
   styles: []
 })
-export class ModelViewerWidget implements OnInit {
+export class ModelViewerWidget implements OnInit, OnDestroy {
   @Input() config;
 
   public modelContainerId;
   
   private deviceId: string;
   private binaryId: string;
+  private modelType: string;
   private showGrid: boolean = false;
   private backgroundColor;
   private cameraOrbitSpeed = 0;
@@ -52,6 +54,8 @@ export class ModelViewerWidget implements OnInit {
 
   private hasDeviceMeasurements: boolean = false;
 
+  private susbscription;
+
   // constructor()
   constructor(private fetchClient: FetchClient, private realtimeService: Realtime) {
     this.modelContainerId = 'model-container-'+Date.now();
@@ -66,19 +70,28 @@ export class ModelViewerWidget implements OnInit {
           this.deviceId = this.config.device.id;
         } else {
           this.deviceId = '';
-          console.log("Device ID is blank.");
+          console.log("3D Model Viewer Widget - Device ID is blank.");
         }
         // Binary ID
         if(_.has(this.config, 'customwidgetdata.binaryId') && this.config.customwidgetdata.binaryId !== undefined && this.config.customwidgetdata.binaryId !== null && this.config.customwidgetdata.binaryId !== '') {
           this.binaryId = this.config.customwidgetdata.binaryId;
         } else {
-          throw new Error("Binary ID is blank.");
+          throw new Error("3D Model Viewer Widget - Binary ID is blank.");
         }
+
+        // Model Type
+        if(_.has(this.config, 'customwidgetdata.modelType') && this.config.customwidgetdata.modelType !== undefined && this.config.customwidgetdata.modelType !== null && this.config.customwidgetdata.modelType !== '') {
+          this.modelType = this.config.customwidgetdata.modelType;
+        } else {
+          this.modelType = ".dae";
+          throw new Error("3D Model Viewer Widget - Model type is missing. Setting it to default .dae");
+        }
+
         // Background Color
         if(_.has(this.config, 'customwidgetdata.advanced.backgroundColor') && this.config.customwidgetdata.advanced.backgroundColor !== undefined && this.config.customwidgetdata.advanced.backgroundColor !== undefined !== null && this.config.customwidgetdata.advanced.backgroundColor !== '') {
           this.backgroundColor = this.config.customwidgetdata.advanced.backgroundColor;
         } else {
-          console.log("Background color is not selected. Setting it to default color #6d82a3.");
+          console.log("3D Model Viewer Widget - Background color is not selected. Setting it to default color #6d82a3.");
           this.backgroundColor = '#6d82a3';
         }
         // Show Grid
@@ -105,39 +118,43 @@ export class ModelViewerWidget implements OnInit {
         let res = this.fetchClient.fetch('/inventory/binaries/'+this.binaryId, options);
         res.then((data) => {
           data.text().then((modelData) => {
-            this.loadModel(modelData);
+            this.configureSetup();
+            if(this.modelType === '.dae') {
+              this.loadColladaModel(modelData);
+            } else if(this.modelType === '.obj') {
+              this.loadOBJModel(modelData);
+            } else {
+              console.log("3D Model Viewer Widget - Model type is invalid.");
+            }
           })
         });
       } else {
-        throw new Error("Widget config data is unavailable.");
+        throw new Error("3D Model Viewer Widget - Widget config data is unavailable.");
       }
     } catch(e) {
-      console.log("Exception: "+e)
+      console.log("3D Model Viewer Widget - Exception: "+e)
     }
   }
 
-  private async loadModel(body: string) {
-
-    const loader = new ColladaLoader();
-    let modelUrl = URL.createObjectURL(new Blob([body]));
+  private configureSetup() {
     let modelContainer: HTMLElement = document.getElementById(this.modelContainerId);
-
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
-    this.camera = new THREE.PerspectiveCamera( 45, modelContainer.clientWidth/modelContainer.clientHeight, 1, 2000 );
+    this.camera = new THREE.PerspectiveCamera(45, modelContainer.clientWidth/modelContainer.clientHeight, 2, 2000);
 
     // Grid
     let grid = new THREE.GridHelper(20, 20);
     this.scene.add(grid);
     grid.visible = this.showGrid;
 
+    // Mesh
     let particleLight = new THREE.Mesh(
         new THREE.SphereBufferGeometry(4, 8, 8),
         new THREE.MeshBasicMaterial({ color: 0xffffff })
     );
     this.scene.add(particleLight);
     particleLight.position.set(0, 4000, 3009);
-    
+
     // Lights
     let light = new THREE.HemisphereLight(0xffeeee, 0x111122);
     this.scene.add(light);
@@ -147,9 +164,68 @@ export class ModelViewerWidget implements OnInit {
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize( modelContainer.clientWidth, modelContainer.clientHeight );
+    this.renderer.setSize(modelContainer.clientWidth, modelContainer.clientHeight);
     this.renderer.setClearColor(new THREE.Color(this.backgroundColor), 1);
     modelContainer.appendChild(this.renderer.domElement);
+  }
+
+  private async loadOBJModel(body: string) {
+
+    const loader = new OBJLoader();
+
+    let modelUrl = URL.createObjectURL(new Blob([body]));
+
+    let me = this;
+    loader.load(modelUrl, function(collada) {
+      me.group = new THREE.Group();
+      me.group.add(collada);
+      me.scene.add(me.group);
+      //me.scene.add(collada);
+
+      // only evaluates before subscriptions if there are no device measurements specific variables are defined
+      if(!me.hasDeviceMeasurements) {
+        me.evaluateProperties();
+      }
+
+      if(me.deviceId !== '') {
+        // Subscribe to realtime measurments
+        me.susbscription = me.realtimeService.subscribe('/measurements/'+me.deviceId, (data) => {
+          me.setMathScope(data.data.data);
+          me.evaluateProperties();
+        });
+      }
+    });
+
+    this.animateOBJModel();
+  }
+
+  private animateOBJModel() {
+    requestAnimationFrame(animate => {
+      this.animateOBJModel();
+    });
+
+    this.renderOBJModel();
+  }
+
+  private renderOBJModel() {
+    // starts the clock otherwise timer always has value 0
+    this.clock.getDelta();
+    let timer = this.clock.elapsedTime * 0.2;
+
+    this.camera.position.x = Math.cos(timer * this.cameraOrbitSpeed) * 20;
+    this.camera.position.y = 10;
+    this.camera.position.z = Math.sin(timer * this.cameraOrbitSpeed) * 20;
+
+    this.camera.lookAt(0, 5, 0);
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  private async loadColladaModel(body: string) {
+
+    const loader = new ColladaLoader();
+
+    let modelUrl = URL.createObjectURL(new Blob([body]));
+
     let me = this;
     loader.load(modelUrl, function(collada) {
       
@@ -178,32 +254,31 @@ export class ModelViewerWidget implements OnInit {
       me.scene.add(me.group);
 
       me.kinematics = collada.kinematics;
+
+      // only evaluates before subscriptions if there are no device measurements specific variables are defined
+      if(!me.hasDeviceMeasurements) {
+        me.evaluateProperties();
+      }
       
       if(me.deviceId !== '') {
-
-        // only evaluates before subscriptions if there are no device measurements specific variables are defined
-        if(!me.hasDeviceMeasurements) {
-          me.evaluateProperties();
-        }
-        
         // Subscribe to realtime measurments
-        me.realtimeService.subscribe('/measurements/'+me.deviceId, (data) => {
+        me.susbscription = me.realtimeService.subscribe('/measurements/'+me.deviceId, (data) => {
           me.setMathScope(data.data.data);
           me.evaluateProperties();
         });
       }
     });
-    this.animate();
+    this.animateColladaModel();
   }
 
-  private animate(): void {
+  private animateColladaModel(): void {
     requestAnimationFrame(animate => {
-      this.animate();
+      this.animateColladaModel();
     });
-    this.render();
+    this.renderColladaModel();
   };
 
-  private render(): void {
+  private renderColladaModel(): void {
     let delta = this.clock.getDelta();
     let timer = this.clock.elapsedTime * 0.2;
 
@@ -264,6 +339,12 @@ export class ModelViewerWidget implements OnInit {
       this.cameraOrbitSpeed = mathjs.evaluate(expression, this.mathScope);
     } else {
       this.kinematics.setJointValue(propertyName, mathjs.evaluate(expression, this.mathScope));
+    }
+  }
+
+  ngOnDestroy(): void {
+    if(this.susbscription !== undefined && this.susbscription !== null) {
+      this.realtimeService.unsubscribe(this.susbscription);
     }
   }
   

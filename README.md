@@ -1,6 +1,6 @@
 # 3D Model Viewer Widget for Cumulocity IoT
 
-This is a runtime widget to view a 3D collada model (*.dae) in Cumulocity IoT.
+This is a runtime widget to view a 3D collada model (*.dae, *.obj) in Cumulocity IoT.
 
 <img src="/assets/img-preview.png" />
 
@@ -8,7 +8,7 @@ This is a runtime widget to view a 3D collada model (*.dae) in Cumulocity IoT.
 * Supports measurements from a single device
 * Allows background color customization.
 * Allows to configure realtime device measurement for model movements.
-* Allows to upload custom collada(.dae) model file.
+* Allows to upload custom collada(.dae, .obj) model file.
 
 ### Installation - for the dashboards using Runtime Widget Loader
 1. Download the latest `3d-model-viewer-widget-{version}.zip` file from the Releases section.
@@ -23,7 +23,7 @@ This is a runtime widget to view a 3D collada model (*.dae) in Cumulocity IoT.
 3. Choose `3d model viewer` widget.
 4. `Title` is the title of widget. Provide a relevant name. You may choose to hide this. Go to `Appearance` tab and choose `Hidden` under `Widget header style`.
 5. Select the `device`.
-6. `Model file(*.dae)` is to upload the model file (*.dae) into inventory binary. Please wait for it to finish the upload.
+6. `Model file(*.dae, *.obj)` is to upload the model file (*.dae, *.obj) into inventory binary. Please wait for it to finish the upload.
 7. `Variables` is to declare variables with a constant value or map them to the realtime device measurement series. Choose Target as None and provide the constant value or choose Target as Device and then select a measurment series.
 8. `Properties` is to define values for the model properties. You can provide a value as an mathematical expression using the variables defined earlier.
 9. `Background color (in hex)` allows you to set a custom background color using the color picker.
