@@ -356,7 +356,6 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
     } else {
       this.kinematics.setJointValue(propertyName, mathjs.evaluate(expression, this.mathScope));
     }
-    console.log("X,Y,Z: "+this.group.position.x+", "+this.group.position.y+", "+this.group.position.z);
   }
 
   ngOnDestroy(): void {
