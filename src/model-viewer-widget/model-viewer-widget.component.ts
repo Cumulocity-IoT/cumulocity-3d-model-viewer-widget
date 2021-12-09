@@ -140,7 +140,7 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
     let modelContainer: HTMLElement = document.getElementById(this.modelContainerId);
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
-    this.camera = new THREE.PerspectiveCamera(45, modelContainer.clientWidth/modelContainer.clientHeight, 2, 2000);
+    this.camera = new THREE.PerspectiveCamera(50, modelContainer.clientWidth/modelContainer.clientHeight, 0.1, 2000);
 
     // Grid
     let grid = new THREE.GridHelper(20, 20);
@@ -180,6 +180,10 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
       me.group = new THREE.Group();
       me.group.add(collada);
       me.scene.add(me.group);
+      // Uncomment below two lines to see the axis
+      //const axesHelper = new THREE.AxesHelper( 5 );
+      //me.scene.add( axesHelper );
+      
       //me.scene.add(collada);
 
       // only evaluates before subscriptions if there are no device measurements specific variables are defined
@@ -211,11 +215,15 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
     // starts the clock otherwise timer always has value 0
     this.clock.getDelta();
     let timer = this.clock.elapsedTime * 0.2;
-
-    this.camera.position.x = Math.cos(timer * this.cameraOrbitSpeed) * 20;
-    this.camera.position.y = 10;
-    this.camera.position.z = Math.sin(timer * this.cameraOrbitSpeed) * 20;
-
+    if(this.cameraOrbitSpeed === 0) {
+      this.camera.position.x = 0;
+      this.camera.position.y = 10;
+      this.camera.position.z = 20;
+    } else {
+      this.camera.position.x = Math.cos(timer * this.cameraOrbitSpeed) * 20;
+      this.camera.position.y = 10;
+      this.camera.position.z = Math.sin(timer * this.cameraOrbitSpeed) * 20;
+    }
     this.camera.lookAt(0, 5, 0);
     this.renderer.render(this.scene, this.camera);
   }
@@ -232,6 +240,9 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
       const modelScene = collada.scene;
       me.group = new THREE.Group();
       me.group.add(modelScene);
+      // Uncomment below two lines to see the axis
+      //const axesHelper = new THREE.AxesHelper( 5 );
+      //me.scene.add( axesHelper );
 
 			const animations = modelScene.animations;
 
@@ -282,10 +293,15 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
     let delta = this.clock.getDelta();
     let timer = this.clock.elapsedTime * 0.2;
 
-    this.camera.position.x = Math.cos(timer * this.cameraOrbitSpeed) * 20;
-    this.camera.position.y = 10;
-    this.camera.position.z = Math.sin(timer * this.cameraOrbitSpeed) * 20;
-
+    if(this.cameraOrbitSpeed === 0) {
+      this.camera.position.x = 0;
+      this.camera.position.y = 10;
+      this.camera.position.z = 20;
+    } else {
+      this.camera.position.x = Math.cos(timer * this.cameraOrbitSpeed) * 20;
+      this.camera.position.y = 10;
+      this.camera.position.z = Math.sin(timer * this.cameraOrbitSpeed) * 20;
+    }
     this.camera.lookAt(0, 5, 0);
 
     if (this.mixer) {
@@ -340,6 +356,7 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
     } else {
       this.kinematics.setJointValue(propertyName, mathjs.evaluate(expression, this.mathScope));
     }
+    console.log("X,Y,Z: "+this.group.position.x+", "+this.group.position.y+", "+this.group.position.z);
   }
 
   ngOnDestroy(): void {
