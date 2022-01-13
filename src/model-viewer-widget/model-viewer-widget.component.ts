@@ -23,6 +23,7 @@ import * as _ from 'lodash';
 import * as THREE from 'three';
 import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as mathjs from 'mathjs';
 
 @Component({
@@ -119,13 +120,29 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
         res.then((data) => {
           data.text().then((modelData) => {
             this.configureSetup();
-            if(this.modelType === '.dae') {
+            switch (this.modelType) {
+              case '.gltf':
+                this.loadGLTFModel(modelData);  
+                break;
+              
+              case '.dae':
+                this.loadColladaModel(modelData);
+                break;
+              
+              case '.obj':
+                this.loadOBJModel(modelData);
+                break;
+              default:
+                console.log("3D Model Viewer Widget - Model type is invalid.");
+                break;
+            }
+            /* if(this.modelType === '.dae') {
               this.loadColladaModel(modelData);
             } else if(this.modelType === '.obj') {
               this.loadOBJModel(modelData);
             } else {
               console.log("3D Model Viewer Widget - Model type is invalid.");
-            }
+            } */
           })
         });
       } else {
@@ -363,5 +380,89 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
       this.realtimeService.unsubscribe(this.susbscription);
     }
   }
-  
+ 
+  //======================GLTF Model
+  private async loadGLTFModel(body: string) {
+
+    const loader = new GLTFLoader();
+
+    let modelUrl = URL.createObjectURL(new Blob([body]));
+
+    let me = this;
+    loader.load(modelUrl, function(gltf) {
+      
+ 
+      const modelScene = gltf.scene;
+      me.group = new THREE.Group();
+      me.group.add(modelScene);
+      // Uncomment below two lines to see the axis
+      //const axesHelper = new THREE.AxesHelper( 5 );
+      //me.scene.add( axesHelper );
+
+			const animations = modelScene.animations;
+
+      me.group.traverse(child => {
+        if (child.isMesh) {
+            if (!child.geometry.attributes.normal) {
+                // model does not have normals
+                child.material.flatShading = true;
+            }
+        }
+        if (child.isSkinnedMesh && animations) {
+            child.frustumCulled = false;
+        }
+      });
+
+      if (animations && animations.length) {
+        this.mixer = new THREE.AnimationMixer(modelScene);
+        this.mixer.clipAction(animations[0]).play();
+      }
+      me.scene.add(me.group);
+
+      me.kinematics = gltf.kinematics;
+
+      // only evaluates before subscriptions if there are no device measurements specific variables are defined
+      if(!me.hasDeviceMeasurements) {
+        me.evaluateProperties();
+      }
+      
+      if(me.deviceId !== '') {
+        // Subscribe to realtime measurments
+        me.susbscription = me.realtimeService.subscribe('/measurements/'+me.deviceId, (data) => {
+          me.setMathScope(data.data.data);
+          me.evaluateProperties();
+        });
+      }
+    });
+    this.animateGLTFModel();
+  }
+
+  private animateGLTFModel(): void {
+    requestAnimationFrame(animate => {
+      this.animateGLTFModel();
+    });
+    this.renderGLTFModel();
+  };
+
+  private renderGLTFModel(): void {
+    let delta = this.clock.getDelta();
+    let timer = this.clock.elapsedTime * 0.2;
+
+    if(this.cameraOrbitSpeed === 0) {
+      this.camera.position.x = 0;
+      this.camera.position.y = 10;
+      this.camera.position.z = 20;
+    } else {
+      this.camera.position.x = Math.cos(timer * this.cameraOrbitSpeed) * 20;
+      this.camera.position.y = 10;
+      this.camera.position.z = Math.sin(timer * this.cameraOrbitSpeed) * 20;
+    }
+    this.camera.lookAt(0, 5, 0);
+
+    if (this.mixer) {
+        this.mixer.update( delta );
+    }
+
+    this.renderer.render(this.scene, this.camera);
+  }
 }

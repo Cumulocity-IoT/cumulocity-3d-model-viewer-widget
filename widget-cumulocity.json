@@ -7,7 +7,10 @@
       "class": "fa fa-puzzle-piece"
     },
     "manifest": {
-      "noAppSwitcher": true
+      "noAppSwitcher": true,
+      "requiredPlatformVersion": ">=1010.0.4",
+      "version": "2.0.2",
+      "license": "Apache 2.0"
     }
   }
   

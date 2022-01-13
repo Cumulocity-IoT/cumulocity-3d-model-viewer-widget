@@ -2,9 +2,9 @@
 <c8y-form-group>
 
     <!-- Model File -->
-    <label for="model-file" translate>Model file (*.dae, *.obj)</label>
+    <label for="model-file" translate>Model file (*.dae, *.obj, *.gltf)</label>
     <input type="text" class="form-control" [(ngModel)]="widgetInfo.binaryName" readonly />
-    <input type="file" class="form-control" name="model-file" (change)="uploadModelFile($event.target.files)" accept=".dae,model/vnd.collada+xml,.obj" />
+    <input type="file" class="form-control" name="model-file" (change)="uploadModelFile($event.target.files)" accept=".dae,model/vnd.collada+xml,.obj,.gltf" />
     <div>{{modelFileUploadMessage}}</div>
 
     <!-- Separator -->

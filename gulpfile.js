@@ -36,10 +36,11 @@ const bundle = series(
     async function webpackBuild() { return execSync("npx webpack", {stdio: 'inherit'}) },
     function copyCumulocityJson() { return fs.copy('./widget-cumulocity.json', './dist/widget/cumulocity.json')},
     function createZip() {
+        const pkgJson = require('./dist/widget-library/package.json');
         return src('./dist/widget/**/*')
             // Filter out the webpackRuntime chunk, we only need the widget code chunks
             .pipe(filter(file => !/^[a-f0-9]{20}\.js(\.map)?$/.test(file.relative)))
-            .pipe(zip('widget.zip'))
+            .pipe(zip(`${pkgJson.name}-${pkgJson.version}.zip`))
             .pipe(dest('dist/'))
     }
 )
