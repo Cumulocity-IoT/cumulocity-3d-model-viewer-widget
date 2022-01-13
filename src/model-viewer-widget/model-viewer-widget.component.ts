@@ -136,13 +136,6 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
                 console.log("3D Model Viewer Widget - Model type is invalid.");
                 break;
             }
-            /* if(this.modelType === '.dae') {
-              this.loadColladaModel(modelData);
-            } else if(this.modelType === '.obj') {
-              this.loadOBJModel(modelData);
-            } else {
-              console.log("3D Model Viewer Widget - Model type is invalid.");
-            } */
           })
         });
       } else {
