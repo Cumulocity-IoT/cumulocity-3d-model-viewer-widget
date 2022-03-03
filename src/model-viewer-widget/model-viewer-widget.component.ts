@@ -269,8 +269,8 @@ export class ModelViewerWidget implements OnInit, OnDestroy {
       });
 
       if (animations && animations.length) {
-        this.mixer = new THREE.AnimationMixer(modelScene);
-        this.mixer.clipAction(animations[0]).play();
+        me.mixer = new THREE.AnimationMixer(modelScene);
+        me.mixer.clipAction(animations[0]).play();
       }
       me.scene.add(me.group);
 
