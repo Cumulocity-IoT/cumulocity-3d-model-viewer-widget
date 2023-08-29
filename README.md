@@ -2,6 +2,9 @@
 
 This is a runtime widget to view a 3D collada model (*.dae, *.obj, *.gltf) in Cumulocity IoT.
 
+
+ ### ⚠️ This project is no longer under development. Please use [cumulocity-3d-model-viewer-widget-plugin](https://github.com/SoftwareAG/cumulocity-3d-model-viewer-widget-plugin) for Application Builder >=2.x.x and Cumulocity >=1016.x.x⚠️
+
 <img src="/assets/img-preview.png" />
 
 ### Features
